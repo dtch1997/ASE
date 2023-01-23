@@ -15,16 +15,13 @@
 
 """Motion data class for processing motion clips."""
 import os
-import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(os.path.dirname(currentdir))
-os.sys.path.insert(0, parentdir)
-
 import json
 import logging
 import math
 import enum
 import numpy as np
+import yaml
+import torch
 
 from motion_imitation.utilities import pose3d
 from motion_imitation.utilities import motion_util
@@ -36,6 +33,64 @@ class LoopMode(enum.Enum):
   Clamp = 0
   Wrap = 1
 
+class MotionLib(object):
+
+    def __init__(self, motion_file):
+        self._load_motions(motion_file)
+
+    def _fetch_motion_files(self, motion_file):
+        ext = os.path.splitext(motion_file)[1]
+        if (ext == ".yaml"):
+            dir_name = os.path.dirname(motion_file)
+            motion_files = []
+            motion_weights = []
+
+            with open(os.path.join(os.getcwd(), motion_file), 'r') as f:
+                motion_config = yaml.load(f, Loader=yaml.SafeLoader)
+
+            motion_list = motion_config['motions']
+            for motion_entry in motion_list:
+                curr_file = motion_entry['file']
+                curr_weight = motion_entry['weight']
+                assert(curr_weight >= 0)
+
+                curr_file = os.path.join(dir_name, curr_file)
+                motion_weights.append(curr_weight)
+                motion_files.append(curr_file)
+        else:
+            motion_files = [motion_file]
+            motion_weights = [1.0]
+
+        return motion_files, motion_weights
+
+    def _load_motions(self, motion_file):
+        self._motions = []
+        self._motion_weights = []
+        self._motion_files = []
+
+        total_len = 0.0
+
+        motion_files, motion_weights = self._fetch_motion_files(motion_file)
+        num_motion_files = len(motion_files)
+        for f in range(num_motion_files):
+            curr_file = motion_files[f]
+            print("Loading {:d}/{:d} motion files: {:s}".format(f + 1, num_motion_files, curr_file))
+            curr_motion = MotionData(curr_file)
+
+            self._motions.append(curr_motion)
+            
+            curr_weight = motion_weights[f]
+            self._motion_weights.append(curr_weight)
+            self._motion_files.append(curr_file)
+
+        self._motion_lengths = torch.tensor(self._motion_lengths, device=self._device, dtype=torch.float32)
+        self._motion_weights = torch.tensor(self._motion_weights, dtype=torch.float32, device=self._device)
+        self._motion_weights /= self._motion_weights.sum()
+
+        num_motions = self.num_motions()
+        total_len = self.get_total_length()
+
+        print("Loaded {:d} motions with a total length of {:.3f}s.".format(num_motions, total_len))
 
 class MotionData(object):
   """Motion data representing a pose trajectory for a character.

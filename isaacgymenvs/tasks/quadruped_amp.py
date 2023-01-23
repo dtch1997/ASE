@@ -36,7 +36,7 @@ from isaacgym import gymapi
 from isaacgym.torch_utils import *
 
 from isaacgymenvs.tasks.base.vec_task import VecTask
-from ase.poselib.quadruped_motion_data import MotionData
+from isaacgymenvs.tasks.quadruped_motion_data import MotionData
 
 from typing import Tuple, Dict
 
@@ -50,6 +50,7 @@ class QuadrupedAMP(VecTask):
         # TODO: Initialize _amp_obs_buf, _curr_amp_obs_buf, _hist_amp_obs_buf, _amp_obs_demo_buf (?)
         self.cfg = cfg
         
+        self._load_motion(self.cfg['env'][''])
         # normalization
         self.lin_vel_scale = self.cfg["env"]["learn"]["linearVelocityScale"]
         self.ang_vel_scale = self.cfg["env"]["learn"]["angularVelocityScale"]
