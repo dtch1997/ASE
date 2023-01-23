@@ -204,11 +204,10 @@ class Quadruped(BaseTask):
 
         if (asset_file == "mjcf/a1.xml"):
             self._dof_body_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            self._dof_offsets = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-            self._dof_obs_size = 12
+            self._dof_offsets = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self._dof_obs_size = 72 # DOF rotations are represented using tangent and normal vectors
             self._num_actions = 12 # 12 DOFs
-            self._num_obs = 3 + 4 + 12 + 12 # trunk lin vel, trunk orn, dof pos, dof vel
-
+            self._num_obs = 1 + 13 * (3 + 6 + 3 + 3) - 3
         else: 
             print("Unsupported character config file: {s}".format(asset_file))
             assert(False)
