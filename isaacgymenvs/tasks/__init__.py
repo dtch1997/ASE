@@ -30,10 +30,12 @@
 from .anymal import Anymal
 from .cartpole import Cartpole 
 from .quadruped import Quadruped
+from .quadruped_amp import QuadrupedAMP
 
 # Mappings from strings to environments
 isaacgym_task_map = {
     "Anymal": Anymal,
     "Cartpole": Cartpole,
     "Quadruped": Quadruped,
+    "QuadrupedAMP": QuadrupedAMP,
 }
