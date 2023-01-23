@@ -158,51 +158,16 @@ class QuadrupedAMP(VecTask):
     def get_num_amp_obs(self):
         return self._num_amp_obs_steps * self._num_amp_obs_per_step
 
-    def fetch_amp_obs_demo(self, num_samples):
-
-        if (self._amp_obs_demo_buf is None):
-            self._build_amp_obs_demo_buf(num_samples)
-        else:
-            assert(self._amp_obs_demo_buf.shape[0] == num_samples)
-        
-        motion_ids = self._motion_lib.sample_motions(num_samples)
-        
-        # since negative times are added to these values in build_amp_obs_demo,
-        # we shift them into the range [0 + truncate_time, end of clip]
-        truncate_time = self.dt * (self._num_amp_obs_steps - 1)
-        motion_times0 = self._motion_lib.sample_time(motion_ids, truncate_time=truncate_time)
-        motion_times0 += truncate_time
-
-        amp_obs_demo = self.build_amp_obs_demo(motion_ids, motion_times0)
-        self._amp_obs_demo_buf[:] = amp_obs_demo.view(self._amp_obs_demo_buf.shape)
-        amp_obs_demo_flat = self._amp_obs_demo_buf.view(-1, self.get_num_amp_obs())
-
-        return amp_obs_demo_flat
-
-    def build_amp_obs_demo(self, motion_ids, motion_times0):
-        dt = self.dt
-
-        motion_ids = torch.tile(motion_ids.unsqueeze(-1), [1, self._num_amp_obs_steps])
-        motion_times = motion_times0.unsqueeze(-1)
-        time_steps = -dt * torch.arange(0, self._num_amp_obs_steps, device=self.device)
-        motion_times = motion_times + time_steps
-
-        motion_ids = motion_ids.view(-1)
-        motion_times = motion_times.view(-1)
-        root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
-               = self._motion_lib.get_motion_state(motion_ids, motion_times)
-        amp_obs_demo = build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel,
-                                              dof_pos, dof_vel, key_pos,
-                                              self._local_root_obs, self._root_height_obs,
-                                              self._dof_obs_size, self._dof_offsets)
-        return amp_obs_demo
-
     def _build_amp_obs_demo_buf(self, num_samples):
+        """ Builds the AMP observation buffer. 
+        
+        Only needs to be called at init. """
         self._amp_obs_demo_buf = torch.zeros((num_samples, self._num_amp_obs_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float32)
         return
 
 
     def _update_hist_amp_obs(self, env_ids=None):
+        """ Update history of AMP obs by shifting the timestep forward by 1. """
         if (env_ids is None):
             for i in reversed(range(self._amp_obs_buf.shape[1] - 1)):
                 self._amp_obs_buf[:, i + 1] = self._amp_obs_buf[:, i]
