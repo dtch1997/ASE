@@ -1,12 +1,15 @@
 # used to create the object
-name: Quadruped
+name: QuadrupedAMP
 
 physics_engine: ${..physics_engine}
 
 env:
-  motionFile: ''
+  # AMP-specific things
+  motionFile: '/home/daniel/Documents/github/ASE/isaacgymenvs/data/motions/quadruped/dataset_quadruped.yaml'
   hybridInitProb: 0.0
   numAMPObsSteps: 2
+  stateInit: "Default"
+  # End AMP-specific things
   numEnvs: ${resolve_default:4096,${...num_envs}}
   envSpacing: 4.  # [m]
 

@@ -37,7 +37,7 @@ from isaacgym import gymapi
 from isaacgym.torch_utils import *
 
 from isaacgymenvs.tasks.base.vec_task import VecTask
-from isaacgymenvs.tasks.quadruped_motion_data import MotionData
+from isaacgymenvs.tasks.quadruped_motion_data import MotionLib
 
 from typing import Tuple, Dict
 
@@ -52,22 +52,6 @@ class QuadrupedAMP(VecTask):
     def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render):
 
         self.cfg = cfg
-        
-        state_init = cfg["env"]["stateInit"]
-        self._state_init = QuadrupedAMP.StateInit[state_init]
-        self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
-        self._num_amp_obs_steps = cfg["env"]["numAMPObsSteps"]
-        assert(self._num_amp_obs_steps >= 2)
-
-        # Load motion file motion file
-        self._motion_file = self.cfg['env']['motionFile']
-        self._load_motion(self._motion_file)
-        
-        # Initialize _amp_obs_buf, _curr_amp_obs_buf, _hist_amp_obs_buf, _amp_obs_demo_buf (?)
-        self._amp_obs_buf = torch.zeros((self.num_envs, self._num_amp_obs_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float)
-        self._curr_amp_obs_buf = self._amp_obs_buf[:, 0]
-        self._hist_amp_obs_buf = self._amp_obs_buf[:, 1:]
-        self._amp_obs_demo_buf = None
         
         # normalization
         self.lin_vel_scale = self.cfg["env"]["learn"]["linearVelocityScale"]
@@ -167,11 +151,29 @@ class QuadrupedAMP(VecTask):
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx), device=self.device).repeat((self.num_envs, 1))
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
 
+        # AMP-specific
+        state_init = cfg["env"]["stateInit"]
+        self._state_init = QuadrupedAMP.StateInit[state_init]
+        self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
+        self._num_amp_obs_steps = cfg["env"]["numAMPObsSteps"]
+        self._num_amp_obs_per_step = 1 # TODO: Implement correct number
+        assert(self._num_amp_obs_steps >= 2)
+
+        # Load motion file motion file
+        self._motion_file = self.cfg['env']['motionFile']
+        self._load_motion(self._motion_file)
+        
+        # Initialize _amp_obs_buf, _curr_amp_obs_buf, _hist_amp_obs_buf, _amp_obs_demo_buf (?)
+        self._amp_obs_buf = torch.zeros((self.num_envs, self._num_amp_obs_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float)
+        self._curr_amp_obs_buf = self._amp_obs_buf[:, 0]
+        self._hist_amp_obs_buf = self._amp_obs_buf[:, 1:]
+        self._amp_obs_demo_buf = None
+
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
 
     def _load_motion(self, motion_file):
         """ Loads a single motion file to do AMP training"""
-        self._motion_data = MotionData(motion_file)
+        self._motion_data = MotionLib(motion_file, self.device)
 
     def get_num_amp_obs(self):
         return self._num_amp_obs_steps * self._num_amp_obs_per_step
