@@ -30,6 +30,7 @@ import numpy as np
 import os
 import torch
 
+from enum import Enum
 from ase.utils import torch_utils
 from isaacgym import gymtorch
 from isaacgym import gymapi
@@ -42,15 +43,32 @@ from typing import Tuple, Dict
 
 
 class QuadrupedAMP(VecTask):
-    # TODO: Add StateInit enum for initialization strategy
+    class StateInit(Enum):
+        Default = 0
+        Start = 1
+        Random = 2
+        Hybrid = 3
 
     def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render):
-        # TODO: Modify init interface to load motion file
-        # TODO: Call _load_motion to load a single motion
-        # TODO: Initialize _amp_obs_buf, _curr_amp_obs_buf, _hist_amp_obs_buf, _amp_obs_demo_buf (?)
+
         self.cfg = cfg
         
-        self._load_motion(self.cfg['env'][''])
+        state_init = cfg["env"]["stateInit"]
+        self._state_init = QuadrupedAMP.StateInit[state_init]
+        self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
+        self._num_amp_obs_steps = cfg["env"]["numAMPObsSteps"]
+        assert(self._num_amp_obs_steps >= 2)
+
+        # Load motion file motion file
+        self._motion_file = self.cfg['env']['motionFile']
+        self._load_motion(self._motion_file)
+        
+        # Initialize _amp_obs_buf, _curr_amp_obs_buf, _hist_amp_obs_buf, _amp_obs_demo_buf (?)
+        self._amp_obs_buf = torch.zeros((self.num_envs, self._num_amp_obs_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float)
+        self._curr_amp_obs_buf = self._amp_obs_buf[:, 0]
+        self._hist_amp_obs_buf = self._amp_obs_buf[:, 1:]
+        self._amp_obs_demo_buf = None
+        
         # normalization
         self.lin_vel_scale = self.cfg["env"]["learn"]["linearVelocityScale"]
         self.ang_vel_scale = self.cfg["env"]["learn"]["angularVelocityScale"]
@@ -438,6 +456,7 @@ class QuadrupedAMP(VecTask):
 
     def reset_idx(self, env_ids):
         # Randomization can happen only at reset time, since it can reset actor positions on GPU
+        # TODO: Use AMP reset logic
         if self.randomize:
             self.apply_randomizations(self.randomization_params)
 

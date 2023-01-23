@@ -4,6 +4,9 @@ name: Quadruped
 physics_engine: ${..physics_engine}
 
 env:
+  motionFile: ''
+  hybridInitProb: 0.0
+  numAMPObsSteps: 2
   numEnvs: ${resolve_default:4096,${...num_envs}}
   envSpacing: 4.  # [m]
 
