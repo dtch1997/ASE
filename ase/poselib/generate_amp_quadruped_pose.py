@@ -54,7 +54,7 @@ translation += torch.tensor([0, 0, 0.9])
 # import mocap file
 motion_path = ase_dir / 'data' / 'motions' / 'quadruped' / 'dog_trot.txt'
 # generate mo-cap pose
-motion_data = MotionData(motion_path)
+motion_data = MotionData(str(motion_path))
 
 
 # save and visualize T-pose
