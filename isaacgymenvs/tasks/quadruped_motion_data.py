@@ -101,6 +101,35 @@ class MotionLib(object):
     def get_total_length(self):
         return sum(self._motion_lengths)
 
+    def get_motion(self, motion_id):
+        return self._motions[motion_id]
+
+    def sample_motions(self, n):
+        motion_ids = torch.multinomial(self._motion_weights, num_samples=n, replacement=True)
+
+        # m = self.num_motions()
+        # motion_ids = np.random.choice(m, size=n, replace=True, p=self._motion_weights)
+        # motion_ids = torch.tensor(motion_ids, device=self._device, dtype=torch.long)
+        return motion_ids
+
+    def sample_time(self, motion_ids, truncate_time=None):
+        n = len(motion_ids)
+        phase = torch.rand(motion_ids.shape, device=self._device)
+        
+        motion_len = self._motion_lengths[motion_ids]
+        if (truncate_time is not None):
+            assert(truncate_time >= 0.0)
+            motion_len -= truncate_time
+
+        motion_time = phase * motion_len
+        return motion_time
+
+    def get_motion_length(self, motion_ids):
+        return self._motion_lengths[motion_ids]
+
+    def get_motion_state(self, motion_ids, motion_times):
+        raise NotImplementedError()
+
 class MotionData(object):
   """Motion data representing a pose trajectory for a character.
   The pose includes:
