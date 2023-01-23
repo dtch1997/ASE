@@ -30,6 +30,7 @@ import numpy as np
 import os
 import torch
 
+from ase.utils import torch_utils
 from isaacgym import gymtorch
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
@@ -431,11 +432,12 @@ class QuadrupedAMP(VecTask):
         self.compute_observations()
         self.compute_reward(self.actions)
         
-        self._update_hist_amp_obs()
-        self._compute_amp_observations()
+        # TODO: Enable these steps
+        # self._update_hist_amp_obs()
+        # self._compute_amp_observations()
 
-        amp_obs_flat = self._amp_obs_buf.view(-1, self.get_num_amp_obs())
-        self.extras["amp_obs"] = amp_obs_flat
+        # amp_obs_flat = self._amp_obs_buf.view(-1, self.get_num_amp_obs())
+        # self.extras["amp_obs"] = amp_obs_flat
 
         return
 
@@ -503,7 +505,7 @@ class QuadrupedAMP(VecTask):
 
 @torch.jit.script
 def compute_quadruped_reward(obs_buf, episode_lengths, max_episode_length):
-    # type: (Tensor, Tensor, int) -> Tensor
+    # type: (Tensor, Tensor, int) -> Tuple[Tensor, Tensor]
     reward = torch.ones_like(obs_buf[:, 0])
     terminated = torch.zeros_like(obs_buf[:, 0])
     reset = torch.where(episode_lengths >= max_episode_length - 1, torch.ones_like(terminated), terminated)
@@ -548,34 +550,6 @@ def compute_anymal_observations(root_states,
 def build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel, dof_pos, dof_vel, key_body_pos, 
                            local_root_obs, root_height_obs, dof_obs_size, dof_offsets):
     # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int]) -> Tensor
-    root_h = root_pos[:, 2:3]
-    heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
-
-    if (local_root_obs):
-        root_rot_obs = quat_mul(heading_rot, root_rot)
-    else:
-        root_rot_obs = root_rot
-    root_rot_obs = torch_utils.quat_to_tan_norm(root_rot_obs)
-    
-    if (not root_height_obs):
-        root_h_obs = torch.zeros_like(root_h)
-    else:
-        root_h_obs = root_h
-    
-    local_root_vel = quat_rotate(heading_rot, root_vel)
-    local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
-
-    root_pos_expand = root_pos.unsqueeze(-2)
-    local_key_body_pos = key_body_pos - root_pos_expand
-    
-    heading_rot_expand = heading_rot.unsqueeze(-2)
-    heading_rot_expand = heading_rot_expand.repeat((1, local_key_body_pos.shape[1], 1))
-    flat_end_pos = local_key_body_pos.view(local_key_body_pos.shape[0] * local_key_body_pos.shape[1], local_key_body_pos.shape[2])
-    flat_heading_rot = heading_rot_expand.view(heading_rot_expand.shape[0] * heading_rot_expand.shape[1], 
-                                               heading_rot_expand.shape[2])
-    local_end_pos = quat_rotate(flat_heading_rot, flat_end_pos)
-    flat_local_key_pos = local_end_pos.view(local_key_body_pos.shape[0], local_key_body_pos.shape[1] * local_key_body_pos.shape[2])
-    
-    dof_obs = dof_to_obs(dof_pos, dof_obs_size, dof_offsets)
-    obs = torch.cat((root_h_obs, root_rot_obs, local_root_vel, local_root_ang_vel, dof_obs, dof_vel, flat_local_key_pos), dim=-1)
+    raise NotImplementedError
+    obs = None
     return obs
