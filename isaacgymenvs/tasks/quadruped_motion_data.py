@@ -35,7 +35,8 @@ class LoopMode(enum.Enum):
 
 class MotionLib(object):
 
-    def __init__(self, motion_file):
+    def __init__(self, motion_file, device):
+        self._device = device
         self._load_motions(motion_file)
 
     def _fetch_motion_files(self, motion_file):
@@ -67,6 +68,7 @@ class MotionLib(object):
         self._motions = []
         self._motion_weights = []
         self._motion_files = []
+        self._motion_lengths = []
 
         total_len = 0.0
 
@@ -78,7 +80,8 @@ class MotionLib(object):
             curr_motion = MotionData(curr_file)
 
             self._motions.append(curr_motion)
-            
+            # TODO: Calculate motion length
+
             curr_weight = motion_weights[f]
             self._motion_weights.append(curr_weight)
             self._motion_files.append(curr_file)
@@ -91,6 +94,12 @@ class MotionLib(object):
         total_len = self.get_total_length()
 
         print("Loaded {:d} motions with a total length of {:.3f}s.".format(num_motions, total_len))
+  
+    def num_motions(self):
+        return len(self._motions)
+
+    def get_total_length(self):
+        return sum(self._motion_lengths)
 
 class MotionData(object):
   """Motion data representing a pose trajectory for a character.
