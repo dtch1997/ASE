@@ -442,7 +442,9 @@ class QuadrupedAMP(VecTask):
     def compute_reward(self, actions):
         self.rew_buf[:], self.reset_buf[:] = compute_quadruped_reward(
             # tensors
-            self.obs_buf
+            self.obs_buf,
+            self.progress_buf,
+            self.max_episode_length,
         )
 
     def compute_observations(self):
@@ -500,10 +502,11 @@ class QuadrupedAMP(VecTask):
 
 
 @torch.jit.script
-def compute_quadruped_reward(obs_buf):
-    # type: (Tensor) -> Tensor
+def compute_quadruped_reward(obs_buf, episode_lengths, max_episode_length):
+    # type: (Tensor, Tensor, int) -> Tensor
     reward = torch.ones_like(obs_buf[:, 0])
-    reset = torch.zeros_like(obs_buf[:, 0])
+    terminated = torch.zeros_like(obs_buf[:, 0])
+    reset = torch.where(episode_lengths >= max_episode_length - 1, torch.ones_like(terminated), terminated)
     return reward, reset
 
 
