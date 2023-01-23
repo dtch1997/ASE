@@ -34,20 +34,20 @@ env:
     controlFrequencyInv: 1 # 60 Hz
 
   defaultJointAngles:  # = target angles when action = 0.0
-    LF_HAA: 0.03    # [rad]
-    LH_HAA: 0.03    # [rad]
-    RF_HAA: -0.03   # [rad]
-    RH_HAA: -0.03   # [rad]
+    FL_hip_joint: 0.03    # [rad]
+    RL_hip_joint: 0.03    # [rad]
+    FR_hip_joint: -0.03   # [rad]
+    RR_hip_joint: -0.03   # [rad]
 
-    LF_HFE: 0.4     # [rad]
-    LH_HFE: -0.4    # [rad]
-    RF_HFE: 0.4     # [rad]
-    RH_HFE: -0.4    # [rad]
+    FL_thigh_joint: 0.4     # [rad]
+    RL_thigh_joint: -0.4    # [rad]
+    FR_thigh_joint: 0.4     # [rad]
+    RR_thigh_joint: -0.4    # [rad]
 
-    LF_KFE: -0.8    # [rad]
-    LH_KFE: 0.8     # [rad]
-    RF_KFE: -0.8    # [rad]
-    RH_KFE: 0.8     # [rad]
+    FL_calf_joint: -0.8    # [rad]
+    RL_calf_joint: 0.8     # [rad]
+    FR_calf_joint: -0.8    # [rad]
+    RR_calf_joint: 0.8     # [rad]
 
   urdfAsset:
     collapseFixedJoints: True
