@@ -1,4 +1,10 @@
 # if given, will override the device setting in gym. 
+wandb_activate: True
+wandb_entity: dtch1997
+wandb_project: QuadrupedASE
+wandb_name: test_wandb
+wandb_group: debug
+
 env: 
   numEnvs: 4096
   envSpacing: 5

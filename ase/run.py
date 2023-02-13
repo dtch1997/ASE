@@ -219,6 +219,21 @@ def main():
         
     if args.motion_file:
         cfg['env']['motion_file'] = args.motion_file
+
+    if cfg["wandb_activate"]:
+        # Make sure to install WandB if you actually use this.
+        import wandb
+
+        run = wandb.init(
+            project=cfg['wandb_project'],
+            group=cfg['wandb_group'],
+            entity=cfg['wandb_entity'],
+            config={'train': cfg_train, 'task': cfg},
+            sync_tensorboard=True,
+            name=cfg['wandb_name'],
+            resume="allow",
+            monitor_gym=True,
+        )
     
     # Create default directories for weights and statistics
     cfg_train['params']['config']['train_dir'] = args.output_path
@@ -231,6 +246,9 @@ def main():
     runner.load(cfg_train)
     runner.reset()
     runner.run(vargs)
+
+    if cfg['wandb_activate']: 
+        wandb.finish()
 
     return
 
