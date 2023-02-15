@@ -220,7 +220,7 @@ def main():
     if args.motion_file:
         cfg['env']['motion_file'] = args.motion_file
 
-    if cfg["wandb_activate"]:
+    if cfg["wandb_activate"] and not args.test:
         # Make sure to install WandB if you actually use this.
         import wandb
 
@@ -247,7 +247,7 @@ def main():
     runner.reset()
     runner.run(vargs)
 
-    if cfg['wandb_activate']: 
+    if cfg['wandb_activate'] and not args.test: 
         wandb.finish()
 
     return
